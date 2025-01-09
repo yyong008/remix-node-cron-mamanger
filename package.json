@@ -1,5 +1,5 @@
 {
-  "name": "",
+  "name": "remix-node-cron-mamanger",
   "private": true,
   "sideEffects": false,
   "type": "module",
