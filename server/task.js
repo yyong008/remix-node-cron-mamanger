@@ -80,10 +80,32 @@ class CronTask {
     return activeTasks;
   }
 
+  async createTaskLog(taskId) {
+    if(!taskId) {
+      console.error("create task log taskId is required")
+      return
+    }
+    const t = await prisma.task.findUnique({
+      where: {
+        id: taskId,
+      },
+    })
+    // 创建任务日志
+    const taskLog = await prisma.taskLog.create({
+      data: {
+        tast_id: t.task_id,
+        name:  t.name,
+        status: t.status,        
+      }
+    })
+    return taskLog
+  }
+
   /**
    * 启动所有活跃的任务
    */
   async startTasks() {
+    const { createTaskLog } = this
     const activeTasks = await this.findActiveTasks();
 
     activeTasks.forEach((task) => {
@@ -93,6 +115,7 @@ class CronTask {
         const functionName = task.function_name; // 获取任务对应的函数名
         if (functionName && typeof ch[functionName] === "function") {
           await ch[functionName](JSON.parse(task.function_params));
+          createTaskLog(task.id)
         } else {
           console.log(`No handler for function: ${functionName}`);
         }

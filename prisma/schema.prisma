@@ -38,6 +38,7 @@ enum TaskStatus {
 
 model TaskLog {
   id            Int           @id @default(autoincrement())
+  name        String
   task_id       Int
   task          Task          @relation(fields: [task_id], references: [id])
   started_at    DateTime
