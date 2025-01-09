@@ -18,6 +18,8 @@ model Task {
   name        String
   description String?
   schedule    String // Cron 表达式
+  function_name String // 执行的函数名
+  function_params String? // 执行函数的参数
   status      TaskStatus @default(ACTIVE) // 状态：ACTIVE, INACTIVE, PAUSED
   last_run_at DateTime?
   next_run_at DateTime?

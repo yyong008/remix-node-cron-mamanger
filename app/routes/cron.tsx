@@ -1,54 +1,23 @@
-import { Link, useLoaderData } from "@remix-run/react";
 import { PageContainer, ProTable } from "@ant-design/pro-components";
 
+import { LoaderFunction } from "@remix-run/node";
+import { createColumn } from "~/components/CronColumns";
 import prisma from "~/lib/prisma";
+import { useLoaderData } from "@remix-run/react";
 
-export const loader = async ({ request, context }) => {
-  console.log("context", context)
+export const loader: LoaderFunction = async () => {
   const data = await prisma.task.findMany();
   return data;
 };
 
 export default function Corn() {
-  const data = useLoaderData();
+  const data = useLoaderData<typeof loader>();
   return (
     <PageContainer>
       <ProTable
         search={false}
-        dataSource={data ?? []}
-        columns={[
-          {
-            title: "任务名称",
-            dataIndex: "name",
-            key: "name",
-          },
-          {
-            title: "描述",
-            dataIndex: "description",
-            key: "type",
-          },
-          {
-            title: "任务状态",
-            dataIndex: "status",
-            key: "status",
-          },
-          {
-            title: "cron 表达式",
-            dataIndex: "schedule",
-            key: "schedule",
-          },
-          {
-            title: "操作",
-            key: "action",
-            render: (text, record) => {
-              return (
-                <>
-                  <Link to={`/updateCron/${record.id}`}>修改</Link>
-                </>
-              );
-            },
-          },
-        ]}
+        dataSource={data}
+        columns={createColumn()}
       ></ProTable>
     </PageContainer>
   );

@@ -1,6 +1,5 @@
-import { getLoadContext, startTasks } from "./task.js"
-
 import { createRequestHandler } from "@remix-run/express";
+import { cronTask } from "./task.js"
 import express from "express";
 import figlet from "figlet";
 import { installGlobals } from "@remix-run/node";
@@ -43,7 +42,7 @@ app.all(
       ? () => viteDevServer.ssrLoadModule("virtual:remix/server-build")
       : // @ts-ignore
         await import("../build/server/index"),
-    getLoadContext,
+    getLoadContext: cronTask.getLoadContext.bind(cronTask),
   }),
 );
 
@@ -66,5 +65,5 @@ app.listen(port, () => {
   );
   console.log("")
   console.log(`Server on: http://localhost:${port}\n`);
-  startTasks()
+  cronTask.startTasks()
 });
