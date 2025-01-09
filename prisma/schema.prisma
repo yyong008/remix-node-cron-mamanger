@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  schedule    String // Cron 表达式
+  status      TaskStatus @default(ACTIVE) // 状态：ACTIVE, INACTIVE, PAUSED
+  last_run_at DateTime?
+  next_run_at DateTime?
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+  TaskLog     TaskLog[]
+
+  @@index([status])
+}
+
+enum TaskStatus {
+  ACTIVE
+  INACTIVE
+  PAUSED
+}
+
+model TaskLog {
+  id            Int           @id @default(autoincrement())
+  task_id       Int
+  task          Task          @relation(fields: [task_id], references: [id])
+  started_at    DateTime
+  finished_at   DateTime 
+  status        TaskLogStatus
+  error_message String? // 错误信息，任务失败时填写
+  created_at    DateTime      @default(now())
+
+  @@index([task_id])
+}
+
+enum TaskLogStatus {
+  SUCCESS
+  FAILURE
+}
