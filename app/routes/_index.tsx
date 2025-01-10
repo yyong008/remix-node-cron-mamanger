@@ -1,5 +1,6 @@
 import { Link } from "@remix-run/react";
 import type { MetaFunction } from "@remix-run/node";
+import { TypeInfo } from "~/components/TypeInfo";
 
 export const meta: MetaFunction = () => {
   return [
@@ -21,12 +22,12 @@ export default function Index() {
       className="flex flex-col h-screen items-center"
       style={gridStyle}
     >
-      <div className="flex flex-col items-center justify-center mt-[60px] gap-3">
+      <div className="flex flex-col items-center justify-center mt-[60px] gap-4">
         <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-500 via-red-500 to-blue-500 bg-clip-text text-transparent">
-          Remix Express Node Cron Mananger
+          <TypeInfo />
         </h1>
 
-        <div className="text-gray-400 mt-[200px]">本项目由以下技术栈构建：</div>
+        <div className="text-gray-400 mt-[100px] mb-[80px]">本项目由以下技术栈构建：</div>
 
         <h1 className="text-xl font-bold bg-gradient-to-r from-green-500 via-red-500 to-yellow-500 bg-clip-text text-transparent">
           Remix + Express + Node Cron
