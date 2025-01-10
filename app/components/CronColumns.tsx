@@ -1,4 +1,5 @@
 import { Link } from "@remix-run/react";
+import { Tag } from "antd";
 
 export const createColumn = () => {
   return [
@@ -16,6 +17,12 @@ export const createColumn = () => {
       title: "任务状态",
       dataIndex: "status",
       key: "status",
+      render(_, record) {
+        if (record.status === "ACTIVE") {
+          return <Tag color="green">启用</Tag>;
+        }
+        return <Tag color="geekblue">{"禁用"}</Tag>;
+      }
     },
     {
       title: "cron 表达式",

@@ -1,6 +1,7 @@
 import { PageContainer, ProTable } from "@ant-design/pro-components";
 
 import { LoaderFunction } from "@remix-run/node";
+import { Tag } from "antd";
 import prisma from "~/lib/prisma";
 import { useLoaderData } from "@remix-run/react";
 
@@ -40,8 +41,14 @@ export default function TastLog() {
             title: "任务状态",
             dataIndex: "status",
             valueType: "status",
+            render(_, record) {
+              if (record.status === "SUCCESS") {
+                return <Tag color="green">成功</Tag>;
+              }
+              return <Tag color="geekblue">{"失败"}</Tag>;
+            },
           },
-          
+
           {
             title: "error_message",
             valueType: "error_message",
