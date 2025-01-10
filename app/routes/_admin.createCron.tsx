@@ -23,7 +23,7 @@ export const action = async (args: ActionFunctionArgs) => {
 export default function CreateCron() {
   const fether = useFetcher();
   return (
-    <PageContainer>
+    <PageContainer title="Create Cron Task">
       <ProForm
         onFinish={(v) => {
           fether.submit(v, { method: "post", encType: "application/json" });

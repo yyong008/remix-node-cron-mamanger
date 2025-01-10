@@ -16,7 +16,7 @@ export const loader: LoaderFunction = async () => {
 export default function TastLog() {
   const data = useLoaderData<typeof loader>();
   return (
-    <PageContainer>
+    <PageContainer title="Task Log">
       <ProTable
         search={false}
         dataSource={data}

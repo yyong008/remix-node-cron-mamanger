@@ -17,7 +17,7 @@ export const loader: LoaderFunction = async () => {
 export default function Corn() {
   const data = useLoaderData<typeof loader>();
   return (
-    <PageContainer>
+    <PageContainer title="Cron Task List">
       <ProTable
         search={false}
         dataSource={data}
