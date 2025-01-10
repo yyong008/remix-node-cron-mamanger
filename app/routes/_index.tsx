@@ -1,5 +1,7 @@
+import { FeatureItem } from "~/components/FeatureItem";
 import { Link } from "@remix-run/react";
 import type { MetaFunction } from "@remix-run/node";
+import { SocialMedia } from "~/components/SocialMedia";
 import { TypeInfo } from "~/components/TypeInfo";
 
 export const meta: MetaFunction = () => {
@@ -13,21 +15,38 @@ export default function Index() {
   const gridStyle = {
     backgroundImage: `linear-gradient(90deg, rgba(169, 169, 169, .4) 3%, transparent 0),
                       linear-gradient(1turn, rgba(169, 169, 169, .4) 3%, transparent 0)`,
-    backgroundSize: '20px 20px',
-    backgroundPosition: '100% 100%',
-    height: '100vh', // 视口高度
+    backgroundSize: "20px 20px",
+    backgroundPosition: "100% 100%",
+    height: "100vh", // 视口高度
   };
+
+  const features = [
+    {
+      title: "Cron",
+      description: "定时任务",
+      icon: "🕰️",
+    },
+    {
+      title: "Cron Task",
+      description: "定时任务",
+      icon: "📅",
+    },
+    {
+      title: "Task Log",
+      description: "定时任务日志",
+      icon: "📝",
+    },
+  ];
   return (
-    <div
-      className="flex flex-col h-screen items-center"
-      style={gridStyle}
-    >
+    <div className="flex flex-col h-screen items-center" style={gridStyle}>
       <div className="flex flex-col items-center justify-center mt-[60px] gap-4">
         <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-500 via-red-500 to-blue-500 bg-clip-text text-transparent">
           <TypeInfo />
         </h1>
 
-        <div className="text-gray-400 mt-[100px] mb-[80px]">本项目由以下技术栈构建：</div>
+        <div className="text-gray-400 mt-[100px] mb-[80px]">
+          本项目由以下技术栈构建：
+        </div>
 
         <h1 className="text-xl font-bold bg-gradient-to-r from-green-500 via-red-500 to-yellow-500 bg-clip-text text-transparent">
           Remix + Express + Node Cron
@@ -56,6 +75,19 @@ export default function Index() {
             </button>
           </div>
         </Link>
+      </div>
+
+      <SocialMedia />
+
+      <div className="flex gap-4 mt-[20px]">
+        {features.map((feature) => (
+          <FeatureItem
+            key={feature.title}
+            icon={feature.icon}
+            title={feature.title}
+            description={feature.description}
+          />
+        ))}
       </div>
     </div>
   );
