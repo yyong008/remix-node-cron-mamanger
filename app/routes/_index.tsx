@@ -40,6 +40,7 @@ export default function Index() {
   return (
     <div className="flex flex-col h-screen items-center" style={gridStyle}>
       <div className="flex flex-col items-center justify-center mt-[60px] gap-4">
+        <div className="text-[200px] w-[200px]">🕰️</div>
         <h1 className="text-5xl font-bold bg-gradient-to-r from-pink-500 via-red-500 to-blue-500 bg-clip-text text-transparent">
           <TypeInfo />
         </h1>
