@@ -6,7 +6,11 @@ import prisma from "~/lib/prisma";
 import { useLoaderData } from "@remix-run/react";
 
 export const loader: LoaderFunction = async () => {
-  const data = await prisma.task.findMany();
+  const data = await prisma.task.findMany({
+    orderBy: {
+      id: "desc",
+    },
+  });
   return data;
 };
 

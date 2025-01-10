@@ -1,7 +1,10 @@
+import * as nm from "nodemailer";
+
 import { TaskStatus } from "@prisma/client";
 import cron from "node-cron";
-import prisma from "./util";
+import { prisma } from "./util.js";
 
+const { nodemailer } = nm;
 class CronHandler {
   /**
    * 备份数据库：使用 pg_dump 命令备份数据库
@@ -24,27 +27,152 @@ class CronHandler {
   /**
    * 清除任务日志
    */
-  handlerClearTaskLog() {
-    console.log("Clearing task log");
+  async handlerClearTaskLog() {
+    try {
+      await prisma.taskLog.deleteMany();
+      console.log("Clearing task log");
+    } catch (error) {
+      console.error("Error clearing task log:", error);
+    }
   }
 
   /**
    * 发送邮件
    */
-  sendEmail() {
-    console.log("Sending email");
+  async sendEmail(params) {
+    try {
+      const parsedParams = JSON.parse(params); // 解析传入的 JSON 字符串
+
+      const { host, port, secure, user, pass, from, to, subject, text, html } =
+        parsedParams; // 提取邮件参数
+
+      // 创建邮件传输器
+      const transporter = nodemailer.createTransport({
+        host, // 邮件服务器主机
+        port, // 端口
+        secure, // 使用 SSL
+        auth: {
+          user, // 发送邮箱用户名
+          pass, // 发送邮箱密码
+        },
+      });
+
+      // 邮件选项
+      const mailOptions = {
+        from, // 发件人
+        to, // 收件人
+        subject, // 邮件主题
+        text, // 邮件纯文本内容
+        html, // 邮件HTML内容
+      };
+
+      // 发送邮件
+      const info = await transporter.sendMail(mailOptions);
+
+      console.log("邮件发送成功:", info.messageId); // 打印邮件 ID
+      return info; // 返回发送结果
+    } catch (error) {
+      console.error("发送邮件失败:", error.message);
+      throw error; // 重新抛出错误，方便调用者处理
+    }
   }
 
   /**
    * 访问页面
    */
-  httpRequest() {
-    console.log("Making HTTP request");
+  async httpRequest(params, task) {
+    const { createFailTaskLog, createSuccessTaskLog } = this
+    try {
+      const parsedParams = JSON.parse(params); // 解析传入的 JSON 字符串
+
+      const { method, url, headers, body } = parsedParams; // 提取请求的参数
+
+      const options = {
+        method, // 请求方法（GET、POST、PUT、DELETE 等）
+        headers, // 请求头
+        body: body ? JSON.stringify(body) : undefined, // 请求体（POST、PUT 请求时）
+      };
+
+      // 发送请求
+      const response = await fetch(url, options);
+      createSuccessTaskLog(task)
+      // 检查响应状态是否为 2xx
+      if (!response.ok) {
+        createFailTaskLog(task)
+        throw new Error(`请求失败，状态码: ${response.status}`);
+      }
+      
+      // 返回响应数据
+      return response.json();
+    } catch (error) {
+      console.error("请求失败:", error.message);
+      createFailTaskLog(task)
+      throw error; // 重新抛出错误，方便调用者处理
+    }
+  }
+
+  async createFailTaskLog(task) {
+    const taskId = task.id;
+    if (!taskId) {
+      console.error("create task log taskId is required");
+      return;
+    }
+    console.log("create task log")
+    const t = await prisma.task.findUnique({
+      where: {
+        id: taskId,
+      },
+    });
+    // 创建任务日志
+    const taskLog = await prisma.taskLog.create({
+      data: {
+        tast_id: t.task_id,
+        name: t.name,
+        status: "FAILURE",
+        started_at: t.created_at,
+        finished_at: t.updated_at,
+        task: {
+          connect: {
+            id: t.id
+          }
+        }
+      },
+    });
+    return taskLog;
+  }
+
+  async createSuccessTaskLog(task) {
+    const taskId = task.id;
+    if (!taskId) {
+      console.error("create task log taskId is required");
+      return;
+    }
+    console.log("create task log")
+    const t = await prisma.task.findUnique({
+      where: {
+        id: taskId,
+      },
+    });
+    // 创建任务日志
+    const taskLog = await prisma.taskLog.create({
+      data: {
+        tast_id: t.task_id,
+        name: t.name,
+        status: t.status === "ACTIVE" ? "SUCCESS" : "FAIL",
+        started_at: t.created_at,
+        finished_at: t.updated_at,
+        task: {
+          connect: {
+            id: t.id
+          }
+        }
+      },
+    });
+    return taskLog;
   }
 }
 
 const ch = new CronHandler();
-
 
 class CronTask {
   /**
@@ -80,32 +208,11 @@ class CronTask {
     return activeTasks;
   }
 
-  async createTaskLog(taskId) {
-    if(!taskId) {
-      console.error("create task log taskId is required")
-      return
-    }
-    const t = await prisma.task.findUnique({
-      where: {
-        id: taskId,
-      },
-    })
-    // 创建任务日志
-    const taskLog = await prisma.taskLog.create({
-      data: {
-        tast_id: t.task_id,
-        name:  t.name,
-        status: t.status,        
-      }
-    })
-    return taskLog
-  }
-
   /**
    * 启动所有活跃的任务
    */
   async startTasks() {
-    const { createTaskLog } = this
+    console.log("start tasks")
     const activeTasks = await this.findActiveTasks();
 
     activeTasks.forEach((task) => {
@@ -114,10 +221,9 @@ class CronTask {
         // 执行任务的逻辑
         const functionName = task.function_name; // 获取任务对应的函数名
         if (functionName && typeof ch[functionName] === "function") {
-          await ch[functionName](JSON.parse(task.function_params));
-          createTaskLog(task.id)
+          await ch[functionName](JSON.parse(task.function_params), task);
         } else {
-          console.log(`No handler for function: ${functionName}`);
+          console.error(`No handler for function: ${functionName}`);
         }
       });
 
@@ -130,7 +236,7 @@ class CronTask {
    * 停止所有任务
    */
   stopTasks() {
-    const { activeCronTasks } = this
+    const { activeCronTasks } = this;
     for (const taskId in activeCronTasks) {
       const task = activeCronTasks[taskId];
       task.stop();
@@ -138,11 +244,11 @@ class CronTask {
   }
 
   stopTaskById(taskId) {
-    const { activeCronTasks } = this
+    const { activeCronTasks } = this;
     const task = activeCronTasks[taskId];
-    if(!task) {
-      console.error(`${taskId} Task not found`)
-      return
+    if (!task) {
+      console.error(`${taskId} Task not found`);
+      return;
     }
     task?.stop();
   }
@@ -152,11 +258,11 @@ class CronTask {
    * @param {*} taskId
    */
   stopDeleteTaskById(taskId) {
-    const { activeCronTasks } = this
+    const { activeCronTasks } = this;
     const task = activeCronTasks[taskId];
-    if(!task) {
-      console.error(`${taskId} Task not found`)
-      return
+    if (!task) {
+      console.error(`${taskId} Task not found`);
+      return;
     }
     task.stop();
     delete activeCronTasks[taskId];
@@ -167,11 +273,11 @@ class CronTask {
    * @param {*} taskId
    */
   restartTaskById(taskId) {
-    const { activeCronTasks } = this
+    const { activeCronTasks } = this;
     const task = activeCronTasks[taskId];
-    if(!task) {
-      console.error(`${taskId} Task not found`)
-      return
+    if (!task) {
+      console.error(`${taskId} Task not found`);
+      return;
     }
     task.stop();
     task.start();
@@ -182,11 +288,11 @@ class CronTask {
    * @param {*} taskId
    */
   startTaskById(taskId) {
-    const { activeCronTasks } = this
+    const { activeCronTasks } = this;
     const task = activeCronTasks[taskId];
-    if(!task) {
-      console.error(`${taskId} Task not found`)
-      return
+    if (!task) {
+      console.error(`${taskId} Task not found`);
+      return;
     }
     task.start();
   }
